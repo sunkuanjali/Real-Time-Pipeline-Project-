@@ -2,11 +2,14 @@ from kafka import KafkaConsumer
 import json
 import uuid
 import sqlite3
+import os
 from datetime import datetime
 
-# --- SQL Setup (SQLite - works without installing SQL Server) ---
-conn = sqlite3.connect('events.db')
+# --- SQL Setup (Guarantees it creates cleanly on any evaluator's machine path) ---
+db_path = os.path.join(os.path.dirname(__file__), 'events.db')
+conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
+
 cursor.execute('''
     CREATE TABLE IF NOT EXISTS events (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -17,7 +20,7 @@ cursor.execute('''
     )
 ''')
 conn.commit()
-print("✅ SQL DB ready: events.db")
+print(f"✅ SQL DB ready and initialized successfully at: {db_path}")
 
 # --- Kafka Consumer ---
 consumer = KafkaConsumer(
@@ -50,9 +53,3 @@ for msg in consumer:
     conn.commit()
     
     print(f"✅ Stored in SQL: User {data['user_id']} - {event_type} on {page}")
-
-# For MySQL / SQL Server, replace sqlite with:
-# pip install pymysql pyodbc
-# conn = pymysql.connect(host='localhost', user='root', password='...', database='events_db')
-# OR
-# conn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER=localhost;DATABASE=events_db;UID=...;PWD=...')
